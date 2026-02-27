@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Az írás – mérleg</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#111;
+      --muted:#666;
+      --line:#e6e6e6;
+
+      /* KÉRT SZÍNEK:
+         JOBB = narancssárga
+         BAL  = sötétzöld
+      */
+      --right:#f59e0b; /* narancs */
+      --left:#064e3b;  /* sötétzöld */
+    }
+
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    .page{
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    /* 3 oszlop: kérdések / mezők / kép */
+    .layout{
+      display:grid;
+      grid-template-columns: 1.25fr 0.9fr 1.1fr;
+      gap: 22px;
+      align-items:start;
+    }
+
+    h1{
+      margin:0 0 10px 0;
+      font-size: 22px;
+      text-align:center;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background:#fff;
+    }
+
+    /* bal oldali kérdések */
+    .qtitle{
+      font-size: 16px;
+      margin: 0 0 12px 0;
+      font-weight: 700;
+    }
+    .q{
+      padding: 10px 0;
+      border-bottom:1px dashed #eee;
+    }
+    .q:last-child{ border-bottom:none; }
+
+    .qnum{
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .qtext{
+      margin: 0 0 8px 0;
+      color:#222;
+      line-height:1.35;
+    }
+
+    .choices{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .choice{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      cursor:pointer;
+      user-select:none;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius: 10px;
+      transition: transform .05s ease, border-color .15s ease;
+    }
+    .choice:hover{
+      border-color:#cfcfcf;
+    }
+    .badge{
+      min-width: 22px;
+      height: 22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      font-weight:700;
+      font-size: 12px;
+      line-height: 1;
+      margin-top:2px;
+    }
+    .choice .label{
+      font-size: 14px;
+      line-height:1.25;
+      color:#111;
+    }
+
+    /* középső mezők */
+    .center h2{
+      margin:0 0 10px 0;
+      font-size: 18px;
+      text-align:center;
+    }
+    .center p{
+      margin:0 0 14px 0;
+      text-align:center;
+      color:var(--muted);
+      font-size: 13px;
+    }
+
+    .grid{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 90px 1fr;
+      align-items:center;
+      gap:10px;
+    }
+    label{
+      color:#222;
+      font-size: 13px;
+    }
+    input[type="text"]{
+      height: 42px;
+      border-radius: 10px;
+      border:1px solid #d9d9d9;
+      font-size: 16px;
+      text-align:center;
+      outline:none;
+    }
+    input[type="text"]:focus{
+      border-color:#999;
+      box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+    }
+
+    .hint{
+      margin-top: 10px;
+      font-size: 12px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    .status{
+      margin-top: 12px;
+      font-size: 14px;
+      text-align:center;
+      color:var(--muted);
+      min-height: 22px;
+    }
+
+    .btns{
+      margin-top: 14px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .button{
+      display:inline-block;
+      padding: 11px 16px;
+      border-radius: 12px;
+      text-decoration:none;
+      color:white;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.12);
+      transition: transform .08s ease, filter .12s ease;
+    }
+    .button:hover{
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    .button:active{
+      transform: translateY(0);
+      filter: brightness(0.95);
+    }
+
+    #goRight{ background: var(--right); }
+    #goLeft{ background: var(--left); }
+    #goRight, #goLeft{ display:none; }
+
+    /* jobb oldali kép */
+    .imgWrap{
+      overflow:hidden;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background:#fff;
+    }
+    .imgWrap img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="layout">
+
+      <!-- BAL: KÉRDÉSEK -->
+      <div class="card">
+        <div class="qtitle">7 kérdés – válaszolj A vagy B betűvel</div>
+
+        <div class="q" data-q="1">
+          <div class="qnum">1.</div>
+          <p class="qtext">Amikor igazságtalanság ér:</p>
+          <div class="choices">
+            <div class="choice" data-q="1" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Azonnal védekezem, mert senki nem ment meg helyettem.</div>
+            </div>
+            <div class="choice" data-q="1" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Először megvizsgálom, bennem nincs-e része.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="2">
+          <div class="qnum">2.</div>
+          <p class="qtext">Amikor valami nagyon fáj:</p>
+          <div class="choices">
+            <div class="choice" data-q="2" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Okozót keresek – és felelőst.</div>
+            </div>
+            <div class="choice" data-q="2" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Megpróbálom elviselni, még ha nem értem is.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="3">
+          <div class="qnum">3.</div>
+          <p class="qtext">Ha valaki megbánt:</p>
+          <div class="choices">
+            <div class="choice" data-q="3" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Emlékszem rá, és nem felejtem.</div>
+            </div>
+            <div class="choice" data-q="3" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Nem hordozom tovább magamban.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="4">
+          <div class="qnum">4.</div>
+          <p class="qtext">Ha hibázom:</p>
+          <div class="choices">
+            <div class="choice" data-q="4" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Megmagyarázom magamnak, miért történt.</div>
+            </div>
+            <div class="choice" data-q="4" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Beismerem, még ha fáj is.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="5">
+          <div class="qnum">5.</div>
+          <p class="qtext">Ha más szenved a közelemben:</p>
+          <div class="choices">
+            <div class="choice" data-q="5" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Segítek, ha tőlem telik – de nem vállalom át.</div>
+            </div>
+            <div class="choice" data-q="5" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Nem tudom közömbösen nézni.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="6">
+          <div class="qnum">6.</div>
+          <p class="qtext">Ha nem látok bizonyítékot valamire:</p>
+          <div class="choices">
+            <div class="choice" data-q="6" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Nem hiszem el.</div>
+            </div>
+            <div class="choice" data-q="6" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Elfogadom, hogy nem mindent értek.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="q" data-q="7">
+          <div class="qnum">7.</div>
+          <p class="qtext">Ha az életem végéhez érnék:</p>
+          <div class="choices">
+            <div class="choice" data-q="7" data-v="A">
+              <span class="badge">A</span>
+              <div class="label">Azt mondanám: ennyi volt, és kész.</div>
+            </div>
+            <div class="choice" data-q="7" data-v="B">
+              <span class="badge">B</span>
+              <div class="label">Kérnék még egy esélyt.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KÖZÉP: BEÍRÓS RÉSZ -->
+      <div class="card center">
+        <h1>Folytatáshoz</h1>
+        <p>Írd be a 7 válaszod betűjét. Csak <b>A</b> vagy <b>B</b>. (Példa: AABBAAB)</p>
+
+        <div class="grid" id="inputs">
+          <div class="row"><label>1. válasz</label><input id="q1" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>2. válasz</label><input id="q2" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>3. válasz</label><input id="q3" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>4. válasz</label><input id="q4" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>5. válasz</label><input id="q5" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>6. válasz</label><input id="q6" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+          <div class="row"><label>7. válasz</label><input id="q7" type="text" inputmode="latin" maxlength="1" autocomplete="off"></div>
+        </div>
+
+        <div class="hint">Tipp: nagybetű-kisbetű mindegy, a rendszer nagybetűsíti.</div>
+
+        <div class="btns">
+          <!-- IDE ÍRD BE A 2 LINKET -->
+          <a id="goRight" class="button" href="JOBB_LINK" target="_blank" rel="noopener">Tovább</a>
+          <a id="goLeft"  class="button" href="BAL_LINK"  target="_blank" rel="noopener">Tovább</a>
+        </div>
+
+        <div class="status" id="status"></div>
+      </div>
+
+      <!-- JOBB: KÉP -->
+      <div class="imgWrap">
+        <img alt="Kép" src="https://raw.githubusercontent.com/trknorbert76-eng/iras-01/main/kereszt.png">
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ====== SÚLYOK (a "mérleg") ======
+    // A = balpont, B = jobbpont (konvenció)
+    const weights = {
+      1: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
+      2: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+      3: { A: {L: 2, R: 0}, B: {L: 0, R: 3} }, // 3-as: B erősebb jobbra (ahogy nálad volt megadva)
+      4: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+      5: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+      6: { A: {L: 3, R: 0}, B: {L: 0, R: 2} }, // 6-os: A erősebb balra
+      7: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
+    };
+
+    // Csak PONTOS döntetlennél döntsön a 6-os:
+    const threshold = 0;
+
+    // ====== ELEMEK ======
+    const inputs = Array.from({length:7}, (_,i)=>document.getElementById(`q${i+1}`));
+    const statusEl = document.getElementById("status");
+    const btnRight = document.getElementById("goRight");
+    const btnLeft  = document.getElementById("goLeft");
+
+    function sanitizeChar(v){
+      if(!v) return "";
+      const c = v.toString().trim().toUpperCase();
+      return (c === "A" || c === "B") ? c : "";
+    }
+
+    function hideButtons(){
+      btnRight.style.display = "none";
+      btnLeft.style.display = "none";
+    }
+
+    function allFilledAndValid(){
+      return inputs.every(inp => sanitizeChar(inp.value) !== "");
+    }
+
+    function scoreSide(){
+      let L = 0, R = 0;
+      const answers = {};
+
+      for(let i=1;i<=7;i++){
+        const v = sanitizeChar(document.getElementById(`q${i}`).value);
+        answers[i] = v;
+        const w = weights[i][v];
+        L += w.L;
+        R += w.R;
+      }
+
+      const diff = Math.abs(L - R);
+
+      // csak akkor tiebreak, ha PONTOS döntetlen (diff <= 0)
+      if(diff <= threshold){
+        const v6 = answers[6];
+        return { side: (v6 === "A") ? "LEFT" : "RIGHT" };
+      }
+
+      return { side: (L > R) ? "LEFT" : "RIGHT" };
+    }
+
+    function update(){
+      // javítjuk a beírt karaktert (pl. kisbetűt) és töröljük a rosszat (C stb.)
+      inputs.forEach((inp) => {
+        const s = sanitizeChar(inp.value);
+        if(inp.value !== s) inp.value = s;
+      });
+
+      hideButtons();
+
+      if(!allFilledAndValid()){
+        statusEl.textContent = "";
+        return;
+      }
+
+      statusEl.textContent = "";
+
+      const res = scoreSide();
+      if(res.side === "RIGHT"){
+        btnRight.style.display = "inline-block";
+      }else{
+        btnLeft.style.display = "inline-block";
+      }
+    }
+
+    // auto-ugrás és gyors kitöltés
+    inputs.forEach((inp, idx) => {
+      inp.addEventListener("input", () => {
+        inp.value = sanitizeChar(inp.value);
+        if(inp.value && idx < inputs.length - 1) inputs[idx+1].focus();
+        update();
+      });
+
+      inp.addEventListener("keyup", (e) => {
+        if(e.key === "Backspace" && !inp.value && idx > 0){
+          inputs[idx-1].focus();
+        }
+      });
+    });
+
+    // kattintás A/B-re: automatikusan kitölti a középső mezőt is
+    document.querySelectorAll(".choice").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const q = Number(el.dataset.q);
+        const v = el.dataset.v;
+        const inp = document.getElementById(`q${q}`);
+        inp.value = v;
+        if(q < 7) document.getElementById(`q${q+1}`).focus();
+        update();
+      });
+    });
+
+    // indulás
+    hideButtons();
+    statusEl.textContent = "";
+    inputs[0].focus();
+  </script>
+</body>
+</html>
