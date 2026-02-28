@@ -367,123 +367,120 @@
   </div>
 
   <script>
-    // ====== SÚLYOK (a "mérleg") ======
-    // A = balpont, B = jobbpont (konvenció)
-    const weights = {
-      1: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
-      2: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
-      3: { A: {L: 2, R: 0}, B: {L: 0, R: 3} }, // 3-as: B erősebb jobbra (ahogy nálad volt megadva)
-      4: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
-      5: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
-      6: { A: {L: 3, R: 0}, B: {L: 0, R: 2} }, // 6-os: A erősebb balra
-      7: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
-    };
+  // ====== SÚLYOK (a "mérleg") ======
+  // A = balpont, B = jobbpont (konvenció)
+  const weights = {
+    1: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
+    2: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+    3: { A: {L: 2, R: 0}, B: {L: 0, R: 3} },
+    4: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+    5: { A: {L: 1, R: 0}, B: {L: 0, R: 1} },
+    6: { A: {L: 3, R: 0}, B: {L: 0, R: 2} },
+    7: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
+  };
 
-    // Csak PONTOS döntetlennél döntsön a 6-os:
-    const threshold = 0;
+  // Csak PONTOS döntetlennél döntsön a 6-os:
+  const threshold = 0;
 
-    // ====== ELEMEK ======
-    const inputs = Array.from({length:7}, (_,i)=>document.getElementById(`q${i+1}`));
-    const statusEl = document.getElementById("status");
-    const btnRight = document.getElementById("goRight");
-    const btnLeft  = document.getElementById("goLeft");
+  // ====== ELEMEK ======
+  const inputs = Array.from({length:7}, (_,i)=>document.getElementById(`q${i+1}`));
+  const statusEl = document.getElementById("status");
+  const btnRight = document.getElementById("goRight");
+  const btnLeft  = document.getElementById("goLeft");
 
-    function sanitizeChar(v){
-      if(!v) return "";
-      const c = v.toString().trim().toUpperCase();
-      return (c === "A" || c === "B") ? c : "";
+  function sanitizeChar(v){
+    if(!v) return "";
+    const c = v.toString().trim().toUpperCase();
+    return (c === "A" || c === "B") ? c : "";
+  }
+
+  function hideButtons(){
+    btnRight.style.display = "none";
+    btnLeft.style.display = "none";
+  }
+
+  function allFilledAndValid(){
+    return inputs.every(inp => sanitizeChar(inp.value) !== "");
+  }
+
+  function scoreSide(){
+    let L = 0, R = 0;
+    const answers = {};
+
+    for(let i=1;i<=7;i++){
+      const v = sanitizeChar(document.getElementById(`q${i}`).value);
+      answers[i] = v;
+      const w = weights[i][v];
+      L += w.L;
+      R += w.R;
     }
 
-    function hideButtons(){
-      btnRight.style.display = "none";
-      btnLeft.style.display = "none";
+    const diff = Math.abs(L - R);
+
+    // csak akkor tiebreak, ha PONTOS döntetlen
+    if(diff <= threshold){
+      const v6 = answers[6];
+      return { side: (v6 === "A") ? "LEFT" : "RIGHT" };
     }
 
-    function allFilledAndValid(){
-      return inputs.every(inp => sanitizeChar(inp.value) !== "");
-    }
+    return { side: (L > R) ? "LEFT" : "RIGHT" };
+  }
 
-    function scoreSide(){
-      let L = 0, R = 0;
-      const answers = {};
+  function revealAndGo(btn){
+    btn.style.display = "inline-block";
+    btn.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => btn.focus(), 150);
+  }
 
-      for(let i=1;i<=7;i++){
-        const v = sanitizeChar(document.getElementById(`q${i}`).value);
-        answers[i] = v;
-        const w = weights[i][v];
-        L += w.L;
-        R += w.R;
-      }
-
-      const diff = Math.abs(L - R);
-
-      // csak akkor tiebreak, ha PONTOS döntetlen (diff <= 0)
-      if(diff <= threshold){
-        const v6 = answers[6];
-        return { side: (v6 === "A") ? "LEFT" : "RIGHT" };
-      }
-
-      return { side: (L > R) ? "LEFT" : "RIGHT" };
-    }
-
-    function update(){
-      // javítjuk a beírt karaktert (pl. kisbetűt) és töröljük a rosszat (C stb.)
-      inputs.forEach((inp) => {
-        const s = sanitizeChar(inp.value);
-        if(inp.value !== s) inp.value = s;
-      });
-
-      hideButtons();
-
-      if(!allFilledAndValid()){
-        statusEl.textContent = "";
-        return;
-      }
-
-      statusEl.textContent = "";
-
-      const res = scoreSide();
-      if(res.side === "RIGHT"){
-        btnRight.style.display = "inline-block";
-      }else{
-        btnLeft.style.display = "inline-block";
-      }
-    }
-
-    // auto-ugrás és gyors kitöltés
-    inputs.forEach((inp, idx) => {
-      inp.addEventListener("input", () => {
-        inp.value = sanitizeChar(inp.value);
-        if(inp.value && idx < inputs.length - 1) inputs[idx+1].focus();
-        update();
-      });
-
-      inp.addEventListener("keyup", (e) => {
-        if(e.key === "Backspace" && !inp.value && idx > 0){
-          inputs[idx-1].focus();
-        }
-      });
+  function update(){
+    // nagybetűsítés + rossz karakter törlése
+    inputs.forEach((inp) => {
+      const s = sanitizeChar(inp.value);
+      if(inp.value !== s) inp.value = s;
     });
 
-    // kattintás A/B-re: automatikusan kitölti a középső mezőt is
-    document.querySelectorAll(".choice").forEach(el=>{
-      el.addEventListener("click", ()=>{
-        const q = Number(el.dataset.q);
-        const v = el.dataset.v;
-        const inp = document.getElementById(`q${q}`);
-        inp.value = v;
-        if(q < 7) document.getElementById(`q${q+1}`).focus();
-        update();
-      });
-    });
-
-    // indulás
     hideButtons();
+
+    if(!allFilledAndValid()){
+      statusEl.textContent = "";
+      return;
+    }
+
     statusEl.textContent = "";
-    inputs[0].focus();
-  </script>
+
+    const res = scoreSide();
+    if(res.side === "RIGHT"){
+      revealAndGo(btnRight);
+    }else{
+      revealAndGo(btnLeft);
+    }
+  }
+
+  // Gépelés: nincs auto-ugrás
+  inputs.forEach((inp) => {
+    inp.addEventListener("input", () => {
+      inp.value = sanitizeChar(inp.value);
+      update();
+    });
+  });
+
+  // A/B kattintás: beír, de nem fókuszál mezőre
+  document.querySelectorAll(".choice").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const q = Number(el.dataset.q);
+      const v = el.dataset.v;
+      document.getElementById(`q${q}`).value = v;
+      update();
+    });
+  });
+
+  // indulás
+  hideButtons();
+  statusEl.textContent = "";
+</script>
 </body>
 </html>
+
 
 
 
