@@ -287,7 +287,7 @@
         </div>
       </div>
 
-      <!-- KÖZÉP: BEÍRÓS RÉSZ -->
+      <!-- KÖZÉP -->
       <div class="card center">
         <h1>Folytatáshoz</h1>
         <p>Írd be a 7 válaszod betűjét. Csak <b>A</b> vagy <b>B</b>. (Példa: AABBAAB)</p>
@@ -305,9 +305,19 @@
         <div class="hint">Tipp: nagybetű-kisbetű mindegy, a rendszer nagybetűsíti.</div>
 
         <div class="btns">
-          <!-- IDE ÍRD BE A 2 LINKET -->
-          <a id="goRight" class="button" href="https://trknorbert76-eng.github.io/befejezes03/" target="_blank" rel="noopener">Tovább</a>
-          <a id="goLeft"  class="button" href="https://trknorbert76-eng.github.io/befejezes04/"  target="_blank" rel="noopener">Tovább</a>
+          <a id="goRight" class="button"
+             href="https://trknorbert76-eng.github.io/befejezes03/"
+             target="_self" rel="noopener"
+             onclick="stopMusic()">
+            Tovább
+          </a>
+
+          <a id="goLeft" class="button"
+             href="https://trknorbert76-eng.github.io/befejezes04/"
+             target="_self" rel="noopener"
+             onclick="stopMusic()">
+            Tovább
+          </a>
         </div>
 
         <div class="status" id="status"></div>
@@ -321,37 +331,24 @@
     </div>
   </div>
 
+  <!-- AUDIO: a body végén, de még a scriptek előtt -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
   <script>
     // ====== M É R L E G ======
-    // Nem fix: hol A húz jobbra, hol B.
-    // Bal (LEFT) szűkebb: összességében picit jobbra billen.
-    //
-    // 6-os: csak döntetlennél dönt, ezért 0-0 pontot ad.
-
     const weights = {
-      // Q1: A inkább "rendet tesz" -> JOBB erősebb, B -> BAL enyhébb
       1: { A: {L: 0, R: 2}, B: {L: 1, R: 0} },
-
-      // Q2: A "megfejteni" -> BAL enyhébb, B "túljutni" -> JOBB erősebb
       2: { A: {L: 1, R: 0}, B: {L: 0, R: 2} },
-
-      // Q3: Mindkettő vállalható, de az "elengedés" picit JOBB felé
       3: { A: {L: 2, R: 0}, B: {L: 0, R: 2} },
-
-      // Q4: Megfordítva: A "megy tovább" -> JOBB, B "mély elemzés" -> BAL
       4: { A: {L: 0, R: 1}, B: {L: 1, R: 0} },
-
-      // Q5: A "határok" -> JOBB erősebb, B "bevonódás" -> BAL enyhébb
       5: { A: {L: 0, R: 2}, B: {L: 1, R: 0} },
-
-      // Q6: TIEBREAK ONLY (nem pontoz)
-      6: { A: {L: 0, R: 0}, B: {L: 0, R: 0} },
-
-      // Q7: A "értelem" -> JOBB erősebb, B "lezárás" -> BAL enyhébb
+      6: { A: {L: 0, R: 0}, B: {L: 0, R: 0} }, // döntetlen esetére
       7: { A: {L: 0, R: 2}, B: {L: 1, R: 0} },
     };
 
-    const threshold = 0; // csak PONTOS döntetlennél tiebreak
+    const threshold = 0;
 
     const inputs = Array.from({length:7}, (_,i)=>document.getElementById(`q${i+1}`));
     const statusEl = document.getElementById("status");
@@ -387,7 +384,6 @@
 
       const diff = Math.abs(L - R);
 
-      // PONTOS döntetlennél döntsön a 6-os
       if(diff <= threshold){
         const v6 = answers[6];
         return { side: (v6 === "A") ? "LEFT" : "RIGHT" };
@@ -418,14 +414,11 @@
       statusEl.textContent = "";
 
       const res = scoreSide();
-      if(res.side === "RIGHT"){
-        revealAndGo(btnRight);
-      }else{
-        revealAndGo(btnLeft);
-      }
+      if(res.side === "RIGHT") revealAndGo(btnRight);
+      else revealAndGo(btnLeft);
     }
 
-    // Gépelés: nincs auto-ugrás
+    // Gépelés
     inputs.forEach((inp) => {
       inp.addEventListener("input", () => {
         inp.value = sanitizeChar(inp.value);
@@ -433,7 +426,7 @@
       });
     });
 
-    // A/B kattintás: beír, nem fókuszál mezőre
+    // A/B kattintás
     document.querySelectorAll(".choice").forEach(el=>{
       el.addEventListener("click", ()=>{
         const q = Number(el.dataset.q);
@@ -445,49 +438,41 @@
 
     hideButtons();
     statusEl.textContent = "";
-    function goWithStop(e){
-  e.preventDefault();
-  stopMusic();
-  const url = e.currentTarget.href;
-  window.location.href = url;
-}
+  </script>
 
-btnRight.addEventListener("click", goWithStop);
-btnLeft.addEventListener("click", goWithStop);
- <script>
-  const music = document.getElementById("bgMusic");
-  let started = false;
+  <script>
+    // ====== ZENE (első kattintásra indul, továbbnál leáll) ======
+    const music = document.getElementById("bgMusic");
+    let started = false;
 
-  function startMusic() {
-    if (started) return;
+    function startMusic(){
+      if(started) return;
 
-    music.volume = 0;
-    music.play().catch(()=>{});
+      music.volume = 0;
+      music.play().catch(()=>{});
 
-    let v = 0;
-    const fade = setInterval(() => {
-      if (v >= 0.10) clearInterval(fade);
-      else { v += 0.01; music.volume = v; }
-    }, 120);
+      let v = 0;
+      const fade = setInterval(() => {
+        if (v >= 0.10) clearInterval(fade);
+        else { v += 0.01; music.volume = v; }
+      }, 120);
 
-    started = true;
-  }
+      started = true;
+    }
 
-  function stopMusic(){
-    try{
-      music.pause();
-      music.currentTime = 0;
-    }catch(e){}
-  }
+    function stopMusic(){
+      try{
+        music.pause();
+        music.currentTime = 0;
+      }catch(e){}
+    }
 
-  window.addEventListener("click", startMusic, { once: true });
-  window.addEventListener("touchstart", startMusic, { once: true });
-</script>
-  <audio id="bgMusic" loop>
-  <source src="music.mp3" type="audio/mpeg">
-</audio>
+    // hogy az onclick biztos lássa
+    window.stopMusic = stopMusic;
+
+    window.addEventListener("click", startMusic, { once:true });
+    window.addEventListener("touchstart", startMusic, { once:true });
+  </script>
+
 </body>
 </html>
-
-
-
