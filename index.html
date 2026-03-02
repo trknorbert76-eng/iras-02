@@ -445,8 +445,49 @@
 
     hideButtons();
     statusEl.textContent = "";
-  </script>
+    function goWithStop(e){
+  e.preventDefault();
+  stopMusic();
+  const url = e.currentTarget.href;
+  window.location.href = url;
+}
+
+btnRight.addEventListener("click", goWithStop);
+btnLeft.addEventListener("click", goWithStop);
+ <script>
+  const music = document.getElementById("bgMusic");
+  let started = false;
+
+  function startMusic() {
+    if (started) return;
+
+    music.volume = 0;
+    music.play().catch(()=>{});
+
+    let v = 0;
+    const fade = setInterval(() => {
+      if (v >= 0.10) clearInterval(fade);
+      else { v += 0.01; music.volume = v; }
+    }, 120);
+
+    started = true;
+  }
+
+  function stopMusic(){
+    try{
+      music.pause();
+      music.currentTime = 0;
+    }catch(e){}
+  }
+
+  window.addEventListener("click", startMusic, { once: true });
+  window.addEventListener("touchstart", startMusic, { once: true });
+</script>
+  <audio id="bgMusic" loop>
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
 </body>
 </html>
+
 
 
