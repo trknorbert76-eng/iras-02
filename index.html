@@ -417,7 +417,61 @@
       if(res.side === "RIGHT") revealAndGo(btnRight);
       else revealAndGo(btnLeft);
     }
+// ===== VÁLASZ-SZÖVEG VARIÁCIÓK: CSAK OLDALBETÖLTÉSKOR =====
+const answerVariants = {
+  1: [
+    { A:"Először rendet akarok tenni: mi történt pontosan?", B:"Először azt nézem: mit tudok ebből most kihozni?" },
+    { A:"Előbb tisztázok: mi az igazság?", B:"Előbb a megoldást keresem: mi működik most?" },
+    { A:"Sorrend: okok → tények → igazság.", B:"Sorrend: túlélés → lépés → kimenet." },
+  ],
+  2: [
+    { A:"Meg akarom érteni, miért történik velem.", B:"Inkább túl akarok jutni rajta, anélkül hogy mindent megfejtenék." },
+    { A:"A fájdalom mögött okot keresek.", B:"A fájdalmat nem fejtegetem: továbblépek." },
+    { A:"Kérdezek: miért pont így?", B:"Kérdezek: hogyan tovább?" },
+  ],
+  3: [
+    { A:"Nem felejtem el könnyen, mert tanulok belőle.", B:"Elengedem, mert nem akarom, hogy bennem maradjon." },
+    { A:"Megjegyzem: később még érteni akarom.", B:"Lerakom: nem cipelem tovább." },
+    { A:"Emlékszem rá, hogy többet ne ismétlődjön.", B:"Békén hagyom, hogy ne mérgezzen." },
+  ],
+  4: [
+    { A:"Kijavítom, és megyek tovább.", B:"Megállok, és végiggondolom, hol csúszott el." },
+    { A:"Javítás → folytatás.", B:"Megértés → tanulság." },
+    { A:"Rendezem gyorsan, aztán tovább.", B:"Szétszedem fejben, hogy miért történt." },
+  ],
+  5: [
+    { A:"Segítek, de közben tartom a határaimat.", B:"Nehéz távol maradnom: bevonódok érzelmileg." },
+    { A:"Adok, de nem éghetek ki.", B:"Beleérzem magam, és viszem magammal." },
+    { A:"Támogatok, de maradok stabil.", B:"Ha szenved, én is szenvedek vele." },
+  ],
+  6: [
+    { A:"Addig nem állítok semmit biztosra.", B:"El tudom fogadni, hogy nem minden mérhető." },
+    { A:"Bizonyíték nélkül óvatos vagyok.", B:"Bizonyíték nélkül is lehet igaz." },
+    { A:"Ami nem támasztható alá, azt nem mondom ki.", B:"Ami nem mérhető, attól még létezhet." },
+  ],
+  7: [
+    { A:"Azt szeretném, hogy legyen értelme annak, ami történt.", B:"Azt szeretném, hogy békében le tudjam zárni." },
+    { A:"Úgy mennék el, hogy összeáll a kép.", B:"Úgy mennék el, hogy elcsendesedik bennem." },
+    { A:"Legyen üzenete a végének.", B:"Legyen nyugalma a végének." },
+  ],
+};
 
+function applyRandomAnswerTextsOnce(){
+  for(let q = 1; q <= 7; q++){
+    const list = answerVariants[q];
+    if(!list || !list.length) continue;
+
+    const pick = list[Math.floor(Math.random() * list.length)];
+
+    const a = document.querySelector(`.choice[data-q="${q}"][data-v="A"] .label`);
+    const b = document.querySelector(`.choice[data-q="${q}"][data-v="B"] .label`);
+    if(a) a.textContent = pick.A;
+    if(b) b.textContent = pick.B;
+  }
+}
+
+// csak 1×, betöltéskor
+applyRandomAnswerTextsOnce();
     // Gépelés
     inputs.forEach((inp) => {
       inp.addEventListener("input", () => {
@@ -476,3 +530,4 @@
 
 </body>
 </html>
+
